@@ -1,24 +1,31 @@
+// ピンの役割
+#define PIN_LED		13	// LED
+#define PIN_RELAY	11	// イグナイタ点火用のリレー
+#define COUNT		60	// カウントダウン秒数
+#define TIMEOUT		60	// タイムアウト
+
+// 指定秒カウントしつつシリアルモニタに数値を送信
+void countdown(int);
+// イグナイタ点火・打ち上げ
+void launch();
+// ストップ
+void stop();
+
 void setup(){
+	// 初期化
 	Serial.begin(9600);
-	pinMode(7, OUTPUT);
-	digitalWrite(7, LOW);
+	pinMode(PIN_LED, OUTPUT);
+	pinMode(PIN_RELAY, OUTPUT);
+	digitalWrite(PIN_LED, LOW);
+	digitalWrite(PIN_RELAY, LOW);
 
-	Serial.write("start\n\r");
-}
+	// どうせ一度しかやらないのでここでやってしまう
+	countdown(COUNT);
+	launch();
 
-void countdown(int count){
-	for(int i=count;i>0;i--){
-		Serial.write('0'+i);
-		Serial.write("\n\r");
-		delay(1000);
-	}
-	Serial.write("0\n\r");
-}
-
-void launch(){
-	countdown(5);
-	Serial.write("launch!\n\r");
-	digitalWrite(7, HIGH);
+	// さすがに点火できている or 失敗している
+	delay(TIMEOUT * 1000);
+	stop();
 }
 
 void loop(){
@@ -26,14 +33,36 @@ void loop(){
 	if(input == -1) return;
 	switch(input){
 	case 'g':
-		Serial.write("status: ok\n\r");
+		Serial.println("status: ok");
 		break;
 	case 'l':
 		launch();
 		break;
 	case 's':
-		digitalWrite(7, LOW);
+		stop();
+		break;
 	default:
 		break;
 	}
+}
+
+void countdown(int count){
+	for(;count!=0;count--){
+		if(count%2) digitalWrite(PIN_LED, HIGH);
+		else digitalWrite(PIN_LED, LOW);
+		Serial.println(String(count));
+		delay(1000);
+	}
+}
+
+void launch(){
+	Serial.println("launch!");
+	digitalWrite(PIN_RELAY, HIGH);
+	digitalWrite(PIN_LED, HIGH);
+}
+
+void stop(){
+	Serial.println("stop");
+	digitalWrite(PIN_RELAY, LOW);
+	digitalWrite(PIN_LED, LOW);
 }
